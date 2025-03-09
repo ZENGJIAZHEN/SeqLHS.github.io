@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>實驗最佳化應用程式</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+
+</head>
+<body>
+  <h1>實驗最佳化應用程式</h1>
+  <!-- 載入專案 -->
+  <select id="project-list"></select>
+  <button id="load-project-btn">載入專案</button> 
+  <!-- 生成樣本 --> 
+  <div class="sample-control">
+    <label>樣本數量：</label>
+    <input type="number" id="num-samples" min="1" step="1" placeholder="請輸入樣本數">
+    <button type="button" id="generate-ud-btn">🔹 生成 UD 樣本</button>
+    <button type="button" id="generate-lhs-btn">🔹 生成 LHS 樣本</button>
+  </div>
+  <!-- 主表格 -->
+  <table id="input-table">
+    <thead>
+      <tr id="header-row">
+        <!-- 初始 X 欄：加 data-x-col -->
+        <th data-x-col="true" contenteditable="true">x1</th>
+        <!-- 初始 Y 欄：加 data-y-col -->
+        <th data-y-col="true" contenteditable="true" style="background-color:#f4b400;color:white;">y1</th>
+        <!-- 刪除欄 -->
+        <th style="background-color:#d32f2f;color:white;">刪除</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 一筆預設資料行 -->
+      <tr class="data-row">
+        <td><input type="number" step="0.1"></td>
+        <td><input type="number" step="0.1"></td>
+        <td><button type="button" class="delete-row">X</button></td>
+      </tr>
+      <!-- 上下界行，僅給 X 用 -->
+      <tr id="bounds-row">
+        <td>
+          <div class="bounds-container">
+            <label class="bound-label">上界</label>
+            <input type="number" step="0.1" class="bound-max" placeholder="上界">
+          </div>
+          <div class="bounds-container">
+            <label class="bound-label">下界</label>
+            <input type="number" step="0.1" class="bound-min" placeholder="下界">
+          </div>
+        </td>
+        <td></td>  <!-- Y 無上下界 -->
+        <td></td>  <!-- 刪除欄空白 -->
+      </tr>
+    </tbody>
+  </table>
+  <!-- 主表格下按鍵 -->
+  <div class="operation-container">
+    <div class="button-group">
+        <button class="adjust-btn" data-type="x" data-action="add">➕ 增加 X</button>
+        <button class="adjust-btn" data-type="x" data-action="remove">➖ 減少 X</button>
+        <button id="add-row-btn">➕ 增加行</button>
+        <input type="file" id="file" accept=".csv">
+        <button id="confirm-upload-btn">📂 上傳 CSV</button>
+        <button id="export-csv-btn">📤 另存新檔</button>
+    </div>
+    <!-- 儲存專案 -->
+    <div class="project-group">
+        <label>輸入專案名稱：</label>
+        <input type="text" id="project-name">
+        <button id="save-project-btn">💾 儲存專案</button>
+    </div>
+  </div>
+  <!-- 模型訓練 -->
+  <div class="section-title">模型訓練</div>
+  <div class="model-training-container">
+      <label for="train-model-type">模型類型：</label>
+      <select id="train-model-type">
+          <option value="RSM">RSM</option>
+          <option value="MLP">MLP</option>
+      </select>
+      <div id="rsm-params">
+        <div class="param-input">
+            <label for="rsm-min-r2">最小 R² 分數：</label>
+            <input type="number" id="rsm-min-r2" value="0.8" min="0" max="1" step="0.01">
+        </div>
+      </div>  
+      <div id="mlp-params" style="display:none;">
+          <div class="param-input">
+              <label for="mlp-structure">隱藏層結構：</label>
+              <input type="text" id="mlp-structure" placeholder="例如：3,27,5">
+          </div>
+          <div class="param-input">
+              <label for="activation">激活函數：</label>
+              <select id="activation">
+                <option value="relu">ReLU</option>
+                <option value="tanh">tanh</option>
+                <option value="logistic">Logistic</option>
+                <option value="identity">Identity</option>>
+              </select>
+          </div>
+          <div class="param-input">
+              <label for="max-iter">最大迭代次數：</label>
+              <input type="number" id="max-iter" value="2000" min="100" step="100">
+          </div>
+          <div class="param-input">
+            <label for="learning-rate">學習率：</label>
+            <input type="number" id="learning-rate" value="0.001" min="100" step="100">
+          </div>
+          <div class="param-input">
+            <label for="batch-size">批次大小：</label>
+            <input type="number" id="batch-size" value="32" min="100" step="100">
+          </div>
+          <div class="param-input">
+            <label for="random-state-type">隨機種子類型：</label>
+            <select id="random-state-type">
+                <option value="fixed">固定</option>
+                <option value="random">隨機</option>
+            </select>
+          </div>
+          <div class="param-input" id="random-state-container">
+            <label for="random-state">種子值：</label>
+            <input type="number" id="random-state" value="42" min="0">
+          </div>
+          <div class="param-input">
+            <label for="min-r2">最小 R² 分數：</label>
+            <input type="number" id="min-r2" value="0.8" min="0" max="1" step="0.01">
+        </div>        
+      </div>
+  
+      <button id="train-model-btn">開始訓練</button>
+  <!-- R2 -->
+  </div>
+    模型 R²: <span id="r2-value">N/A</span>
+  </div>
+  <p id="r2-warning" style="display: none;">
+    ⚠️ R² 過低，建議更換模型或調整參數！
+  </p>
+  <!-- 預測新點位區域 -->
+  <div class="section-title">預測新點位</div>
+  <div class="prediction-container">
+      <div class="param-input">
+          <label for="new-points-count">新增點位數量：</label>
+          <input type="number" id="new-points-count" value="1" min="1" max="10">
+      </div>
+      <button id="predict-new-points-btn">預測新點位</button>
+  </div>
+
+  <!-- 預測結果顯示區域 -->
+  <div id="prediction-results" class="prediction-results"></div>
+</body>
+</html>
