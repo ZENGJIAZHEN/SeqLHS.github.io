@@ -376,7 +376,7 @@ def load_model_state():
     if not os.path.exists(model_path):
         raise FileNotFoundError("找不到已訓練的模型")
     
-    model_state = torch.load(model_path)
+    model_state = torch.load(model_path, weights_only=False)
     model_type = model_state["model_type"]
     
     if model_type == "RSM":
